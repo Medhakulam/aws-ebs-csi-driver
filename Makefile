@@ -18,7 +18,7 @@ PKG=github.com/kubernetes-sigs/aws-ebs-csi-driver
 GIT_COMMIT?=$(shell git rev-parse HEAD)
 BUILD_DATE?=$(shell date -u -Iseconds)
 
-LDFLAGS?="-X ${PKG}/pkg/driver.driverVersion=${VERSION} -X ${PKG}/pkg/cloud.driverVersion=${VERSION} -X ${PKG}/pkg/driver.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/driver.buildDate=${BUILD_DATE} -s -w"
+LDFLAGS?="-X ${PKG}/pkg/driver.driverVersion=${VERSION} -X ${PKG}/pkg/cloud.driverVersion=${VERSION} -X ${PKG}/pkg/driver.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/driver.buildDate=${BUILD_DATE} -linkmode=external -extldflags=-static -s -w"
 
 GO111MODULE=on
 GOPATH=$(shell go env GOPATH)
@@ -35,8 +35,8 @@ OS?=linux
 ARCH?=amd64
 OSVERSION?=al2023
 
-ALL_OS?=linux windows
-ALL_ARCH_linux?=amd64 arm64
+ALL_OS?=linux
+ALL_ARCH_linux?=amd64
 ALL_OSVERSION_linux?=al2023
 ALL_OS_ARCH_OSVERSION_linux=$(foreach arch, $(ALL_ARCH_linux), $(foreach osversion, ${ALL_OSVERSION_linux}, linux-$(arch)-${osversion}))
 
@@ -54,12 +54,12 @@ word-hyphen = $(word $2,$(subst -, ,$1))
 .PHONY: linux/$(ARCH) bin/aws-ebs-csi-driver
 linux/$(ARCH): bin/aws-ebs-csi-driver
 bin/aws-ebs-csi-driver: | bin
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -mod=mod -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver ./cmd/
+	CGO_ENABLED=1 GOEXPERIMENT=boringcrypto GOOS=linux GOARCH=$(ARCH) go build -mod=mod -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver ./cmd/ 
 
 .PHONY: windows/$(ARCH) bin/aws-ebs-csi-driver.exe
 windows/$(ARCH): bin/aws-ebs-csi-driver.exe
 bin/aws-ebs-csi-driver.exe: | bin
-	CGO_ENABLED=0 GOOS=windows GOARCH=$(ARCH) go build -mod=mod -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver.exe ./cmd/
+	CGO_ENABLED=1 GOEXPERIMENT=boringcrypto GOOS=windows GOARCH=$(ARCH) go build -mod=mod -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver.exe ./cmd/
 
 # Builds all linux images (not windows because it can't be exported with OUTPUT_TYPE=docker)
 .PHONY: all
